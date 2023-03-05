@@ -32,6 +32,7 @@ BACK_BTN = KeyboardButton("🔙")
 EDIT_NAME = KeyboardButton("Имя")
 EDIT_CITY = KeyboardButton("Город")
 EDIT_AGE = KeyboardButton("Возраст")
+ACTIVE_PROFILE_BTN = KeyboardButton("Активировать")
 
 # KEYBOARDS
 FORM_KB = ReplyKeyboardMarkup(resize_keyboard=True)
@@ -42,6 +43,8 @@ CHECK_USERS = ReplyKeyboardMarkup(resize_keyboard=True)
 CHECK_USERS.add(LIKE_BTN, SKIP_BTN)
 EDIT_PROFILE_KB = ReplyKeyboardMarkup(resize_keyboard=True)
 EDIT_PROFILE_KB.add(EDIT_NAME, EDIT_CITY, EDIT_AGE)
+ACTIVE_KB = ReplyKeyboardMarkup(resize_keyboard=True)
+ACTIVE_KB.add(ACTIVE_PROFILE_BTN)
 
 users = {}
 last_user_id = 0
@@ -55,13 +58,15 @@ async def start_(message: types.Message):
     users = Database.get_dict(FILENAME)
     user_id = str(message.from_user.id)
     username = message.from_user.username
-    users[user_id] = {"state": "start", "username": username, "name": "no", "city": "no", "age": "no", "likes": []}
+    users[user_id] = {"state": "start", "active": "False",
+                      "username": username, "name": "no", "city": "no", "age": "no", "likes": []}
     Database.write(users, FILENAME)
     await message.reply(f"Приветствуем, {message.from_user.username}!\nВ данном боте вы "
                         f"можете познакомиться", reply_markup=FORM_KB)
 
-@dp.message_handler(commands=['/menu'])
+@dp.message_handler(commands=['menu'])
 async def menu_(message: types.Message):
+    users = Database.get_dict(FILENAME)
     user_id = str(message.from_user.id)
     users[user_id]["state"] = "wait"
     Database.write(users, FILENAME)
@@ -97,6 +102,7 @@ async def info(message: types.Message):
         if message.text.isdigit() and 18 <= int(message.text) <= 80:
             users[user_id]["state"] = "wait"
             users[user_id]["age"] = message.text
+            users[user_id]["active"] = "True"
             Database.write(users, FILENAME)
             await message.reply("Анкета заполнена!", reply_markup=MENU_KB)
         else:
@@ -167,7 +173,24 @@ async def info(message: types.Message):
         for liked_id in users[user_id]["likes"]:
             for id in users.keys():
                 if liked_id == id:
-                    if user_id in users[id]["likes"]:
+                    if user_id in users[id]["likes"] and users[id]["active"] == "True":
+                        user_info = Database.get_profile_by_id(users, id)
+                        await message.reply(f"@{user_info[0]}\n{user_info[1]}\n{user_info[2]}\n"
+                                            f"{user_info[3]}")
+    # freeze and active profile
+    elif users[user_id]["state"] == "wait" and message.text == "Скрыть анкету":
+        users[user_id]["active"] = "False"
+        Database.write(users, FILENAME)
+        await message.reply(f"Ваша анкета скрыта. Вы не можете смотреть других участников и поставленные лайки.\n"
+                            f"Другие пользователи Вас не видят.\n"
+                            f"Ваши данные сохранены, Вы всегда можете к нам вернуться.",
+                            reply_markup=ACTIVE_KB)
+    elif users[user_id]["state"] == "wait" and message.text == "Активировать":
+        users[user_id]["active"] = "True"
+        Database.write(users, FILENAME)
+        await message.reply(f"Ваша анкета снова видна в поиске!", reply_markup=MENU_KB)
+
+
 
 
 

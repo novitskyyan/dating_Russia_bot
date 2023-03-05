@@ -15,7 +15,7 @@ class Database:
     def write(users, filename):
         file = open(filename + ".txt", "w", encoding="UTF-8")
         for user, info in users.items():
-            file.write(f"{user} {info['state']} {info['username']} {info['name']} {info['city']} {info['age']}"
+            file.write(f"{user} {info['state']} {info['active']} {info['username']} {info['name']} {info['city']} {info['age']}"
                        f" {' '.join(info['likes'])}\n")
 
     @staticmethod
@@ -25,22 +25,29 @@ class Database:
         users = {}
         for line in file.readlines():
             line_list = line.split()
-            id = line_list[0]
-            state = line_list[1]
-            username = line_list[2]
-            name = line_list[3]
-            city = line_list[4]
-            age = line_list[5]
-            likes = line_list[6:]
-            users[id] = {"state": state, "username": username, "name": name, "city": city, "age": age, "likes": likes}
+            if len(line_list) != 0:
+                id = line_list[0]
+                state = line_list[1]
+                active = line_list[2]
+                username = line_list[3]
+                name = line_list[4]
+                city = line_list[5]
+                age = line_list[6]
+                likes = line_list[7:]
+                users[id] = {"state": state, "active": active, "username": username,
+                             "name": name, "city": city, "age": age, "likes": likes}
         return users
 
     @staticmethod
     def random_profile_list(filename, id):
         users = Database.get_dict(filename)
-        # rand_i = randint(0, len(users) - 2)
-        # i = 0
         users.pop(id)
+        del_users = []
+        for user in users.keys():
+            if users[user]["active"] == "False":
+                del_users.append(user)
+        for deleted in del_users:
+            users.pop(deleted)
         user_id = choice(list(users.keys()))
         info = users[user_id]
         user_info = [user_id, info["name"], info["city"], info["age"]]
@@ -55,7 +62,13 @@ class Database:
             if l[0] == id:
                 return [l[2], l[3], l[4]]
 
-    # def get_profile_by_id
+
+    @staticmethod
+    def get_profile_by_id(users, id):
+        for user_id in users.keys():
+            if user_id == id:
+                return [users[user_id]["username"], users[user_id]["name"], users[user_id]["city"],
+                        users[user_id]["age"]]
 
 
 
