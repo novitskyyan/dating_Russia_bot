@@ -32,6 +32,7 @@ BACK_BTN = KeyboardButton("🔙")
 EDIT_NAME = KeyboardButton("Имя")
 EDIT_CITY = KeyboardButton("Город")
 EDIT_AGE = KeyboardButton("Возраст")
+EDIT_DESC = KeyboardButton("Описание")
 ACTIVE_PROFILE_BTN = KeyboardButton("Активировать")
 
 # KEYBOARDS
@@ -42,7 +43,7 @@ MENU_KB.add(EDIT_FORM_BTN, SWIPE_FORM_BTN, LIKES_BTN, STOP_BTN)
 CHECK_USERS = ReplyKeyboardMarkup(resize_keyboard=True)
 CHECK_USERS.add(LIKE_BTN, SKIP_BTN)
 EDIT_PROFILE_KB = ReplyKeyboardMarkup(resize_keyboard=True)
-EDIT_PROFILE_KB.add(EDIT_NAME, EDIT_CITY, EDIT_AGE)
+EDIT_PROFILE_KB.add(EDIT_NAME, EDIT_CITY, EDIT_AGE, EDIT_DESC)
 ACTIVE_KB = ReplyKeyboardMarkup(resize_keyboard=True)
 ACTIVE_KB.add(ACTIVE_PROFILE_BTN)
 
@@ -100,19 +101,22 @@ async def info(message: types.Message):
             await message.reply(f"Город не обнаружен.\nДоступные города:\n{', '.join(CITIES)}")
     elif users[user_id]["state"] == "age":
         if message.text.isdigit() and 18 <= int(message.text) <= 80:
-            users[user_id]["state"] = "wait"
+            users[user_id]["state"] = "description"
             users[user_id]["age"] = message.text
             users[user_id]["active"] = "True"
             Database.write(users, FILENAME)
-            await message.reply("Анкета заполнена!", reply_markup=MENU_KB)
-        else:
-            await message.reply("Возраст должен быть целым числом от 18 до 80 лет")
+            await message.reply("Введите пару слов о себе")
+    elif users[user_id]["state"] == "description":
+        users[user_id]["state"] = "wait"
+        Database.save_desc_to_file(user_id, message.text)
+        Database.write(users, FILENAME)
+        await message.reply("Анкета заполнена!", reply_markup=MENU_KB)
     elif users[user_id]["state"] == "wait" and message.text == "Смотреть анкеты":
         users[user_id]["state"] = "check_profiles"
         Database.write(users, FILENAME)
         user_info = Database.random_profile_list(FILENAME, user_id)
         last_user_id = user_info[0]
-        await message.reply(f"{user_info[1]}\n{user_info[2]}\n{user_info[3]}", reply_markup=CHECK_USERS)
+        await message.reply(f"{user_info[1]}\n{user_info[2]}\n{user_info[3]}\n{user_info[4]}", reply_markup=CHECK_USERS)
     elif users[user_id]["state"] == "check_profiles" and message.text == "➡":
         Database.write(users, FILENAME)
         user_info = Database.random_profile_list(FILENAME, user_id)
@@ -134,7 +138,9 @@ async def info(message: types.Message):
             Database.write(users, FILENAME)
             profile_list = Database.get_my_profile(FILENAME, user_id)
             await message.reply("Ваше имя изменено!\nНовая анкета")
-            await message.reply(f"\n{profile_list[0]}\n{profile_list[1]}\n{profile_list[2]}", reply_markup=MENU_KB)
+            await message.reply(
+                f"\n{profile_list[0]}\n{profile_list[1]}\n{profile_list[2]}\n{Database.get_desc_user(user_id)}",
+                reply_markup=MENU_KB)
         else:
             await message.reply("Имя должно быть меньше 10 символов и начинаться с заглавной буквы")
     elif message.text == "Город" and users[user_id]["state"] == "edit":
@@ -147,7 +153,7 @@ async def info(message: types.Message):
         Database.write(users, FILENAME)
         profile_list = Database.get_my_profile(FILENAME, user_id)
         await message.reply("Ваш город изменен!")
-        await message.reply(f"\n{profile_list[0]}\n{profile_list[1]}\n{profile_list[2]}", reply_markup=MENU_KB)
+        await message.reply(f"\n{profile_list[0]}\n{profile_list[1]}\n{profile_list[2]}\n{Database.get_desc_user(user_id)}", reply_markup=MENU_KB)
     elif message.text == "Возраст" and users[user_id]["state"] == "edit":
         users[user_id]["state"] = "edit_age"
         Database.write(users, FILENAME)
@@ -159,7 +165,20 @@ async def info(message: types.Message):
             Database.write(users, FILENAME)
             profile_list = Database.get_my_profile(FILENAME, user_id)
             await message.reply("Ваш возраст изменен!")
-            await message.reply(f"\n{profile_list[0]}\n{profile_list[1]}\n{profile_list[2]}", reply_markup=MENU_KB)
+            await message.reply(
+                f"\n{profile_list[0]}\n{profile_list[1]}\n{profile_list[2]}\n{Database.get_desc_user(user_id)}",
+                reply_markup=MENU_KB)
+    elif message.text == "Описание" and users[user_id]["state"] == "edit":
+        users[user_id]["state"] = "edit_desc"
+        Database.write(users, FILENAME)
+        await message.reply(f"Прошлое описание: {Database.get_desc_user(user_id)}\nВведите новое описание:")
+    elif users[user_id]["state"] == "edit_desc":
+        users[user_id]["state"] = "wait"
+        Database.save_desc_to_file(user_id, message.text)
+        Database.write(users, FILENAME)
+        profile_list = Database.get_my_profile(FILENAME, user_id)
+        await message.reply(f"\n{profile_list[0]}\n{profile_list[1]}\n{profile_list[2]}\n{Database.get_desc_user(user_id)}", reply_markup=MENU_KB)
+
     # Check Profiles
     elif users[user_id]["state"] == "check_profiles" and message.text == "😍":
         if last_user_id not in users[user_id]["likes"]:

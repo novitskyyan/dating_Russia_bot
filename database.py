@@ -1,5 +1,6 @@
 from random import randint, choice
 
+
 class Database:
     @staticmethod
     def find_user_by_id(id, filename):
@@ -15,8 +16,9 @@ class Database:
     def write(users, filename):
         file = open(filename + ".txt", "w", encoding="UTF-8")
         for user, info in users.items():
-            file.write(f"{user} {info['state']} {info['active']} {info['username']} {info['name']} {info['city']} {info['age']}"
-                       f" {' '.join(info['likes'])}\n")
+            file.write(
+                f"{user} {info['state']} {info['active']} {info['username']} {info['name']} {info['city']} {info['age']}"
+                f" {' '.join(info['likes'])}\n")
 
     @staticmethod
     def get_dict(filename):
@@ -50,7 +52,7 @@ class Database:
             users.pop(deleted)
         user_id = choice(list(users.keys()))
         info = users[user_id]
-        user_info = [user_id, info["name"], info["city"], info["age"]]
+        user_info = [user_id, info["name"], info["city"], info["age"], Database.get_desc_user(id)]
         return user_info
 
     @staticmethod
@@ -60,16 +62,20 @@ class Database:
         for line in file.readlines():
             l = line.split()
             if l[0] == id:
-                return [l[2], l[3], l[4]]
-
+                return [l[4], l[5], l[6], Database.get_desc_user(id)]
 
     @staticmethod
     def get_profile_by_id(users, id):
         for user_id in users.keys():
             if user_id == id:
                 return [users[user_id]["username"], users[user_id]["name"], users[user_id]["city"],
-                        users[user_id]["age"]]
+                        users[user_id]["age"], Database.get_desc_user(id)]
 
+    @staticmethod
+    def save_desc_to_file(id, desc):
+        with open("desc/" + id + ".txt", "w", encoding="UTF-8") as file:
+            file.write(desc)
 
-
-
+    @staticmethod
+    def get_desc_user(id):
+        return open("desc/" + id + ".txt", "r", encoding="UTF-8").read()
