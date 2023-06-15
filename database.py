@@ -1,4 +1,5 @@
 import sqlite3
+from random import randint as rd
 
 
 class Database:
@@ -11,10 +12,13 @@ class Database:
            user_id INT PRIMARY KEY,
            username TEXT NULL,
            name_ TEXT NULL,
+           gender TEXT NULL,
            city TEXT NULL,
            age TEXT NULL,
            description TEXT NULL,
-           mbti TEXT NULL);
+           mbti TEXT NULL,
+           tags TEXT NULL,
+           photo BLOB NULL);
         """)
 
         self.cur.execute("""CREATE TABLE IF NOT EXISTS users_state(
@@ -54,6 +58,12 @@ class Database:
         self.cur.execute(sql, (name, id_user))
         self.conn.commit()
 
+    def replace_gender(self, id_user, gender_):
+        sql = """UPDATE users SET gender = ? WHERE user_id = ?"""
+
+        self.cur.execute(sql, (gender_, id_user))
+        self.conn.commit()
+
     def replace_city(self, id_user, city):
         sql = """UPDATE users SET city = ? WHERE user_id = ?"""
 
@@ -72,6 +82,18 @@ class Database:
         self.cur.execute(sql, (description, id_user))
         self.conn.commit()
 
+    def replace_mbti(self, id_user, mbti_):
+        sql = """UPDATE users SET mbti = ? WHERE user_id = ?"""
+
+        self.cur.execute(sql, (mbti_, id_user))
+        self.conn.commit()
+
+    def get_mbti(self, id_user):
+        sql = """SELECT mbti FROM users WHERE user_id = ?"""
+
+        self.cur.execute(sql, (id_user,))
+        return self.cur.fetchone()[0]
+
     def replace_active(self, id_user, act):
         sql = """UPDATE users_state SET active = ? WHERE user_id = ?"""
 
@@ -88,12 +110,16 @@ class Database:
         self.cur.execute(sql, (id_user,))
         return self.cur.fetchone()[0]
 
+    def get_gender(self, id_user):
+        sql = """ SELECT gender from users where user_id = ?"""
+        self.cur.execute(sql, (id_user,))
+        return self.cur.fetchone()[0]
     def get_random_profile(self, id_user):
         sql = """ SELECT * from users where user_id != ?"""
 
         self.cur.execute(sql, (id_user,))
         info = self.cur.fetchall()
-        return info
+        return info[rd(0, len(info) - 1)]
 
     def get_my_profile(self, id_user):
         sql = """ SELECT * from users where user_id == ?"""
@@ -101,3 +127,27 @@ class Database:
         self.cur.execute(sql, (id_user,))
         info = self.cur.fetchone()
         return info
+
+    def get_tags(self, id_user):
+        sql = """SELECT tags FROM users WHERE user_id == ?"""
+
+        self.cur.execute(sql, (id_user,))
+        info = self.cur.fetchone()
+        return info[0]
+
+    def replace_tags(self, id_user, tags_):
+        sql = """UPDATE users SET tags = ? WHERE user_id = ?"""
+
+        self.cur.execute(sql, (tags_, id_user))
+        self.conn.commit()
+
+    def get_photo(self, id_user):
+        sql = """ SELECT photo from users where user_id = ?"""
+        self.cur.execute(sql, (id_user,))
+        return self.cur.fetchone()[0]
+
+    def replace_photo(self, id_user, blob_photo):
+        sql = """UPDATE users SET photo = ? WHERE user_id = ?"""
+
+        self.cur.execute(sql, (blob_photo, id_user))
+        self.conn.commit()

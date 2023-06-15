@@ -1,0 +1,7 @@
+Rock
+Rap
+Pop
+Metal
+Hardcore
+Hip-Hop
+Electronic
