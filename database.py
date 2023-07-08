@@ -18,7 +18,10 @@ class Database:
            description TEXT NULL,
            mbti TEXT NULL,
            tags TEXT NULL,
-           photo BLOB NULL);
+           photo BLOB NULL,
+           filter_age INT NULL,
+           filter_gender TEXT NULL,
+           filter_city TEXT NULL);
         """)
 
         self.cur.execute("""CREATE TABLE IF NOT EXISTS users_state(
@@ -151,3 +154,84 @@ class Database:
 
         self.cur.execute(sql, (blob_photo, id_user))
         self.conn.commit()
+
+    def replace_filter_age(self, id_user, age):
+        sql = """UPDATE users SET filter_age = ? WHERE user_id = ?"""
+
+        self.cur.execute(sql, (age, id_user))
+        self.conn.commit()
+
+    def replace_filter_gender(self, id_user, gender):
+        sql = """UPDATE users SET filter_gender = ? WHERE user_id = ?"""
+
+        self.cur.execute(sql, (gender, id_user))
+        self.conn.commit()
+
+    def replace_filter_city(self, id_user, city):
+        sql = """UPDATE users SET filter_city = ? WHERE user_id = ?"""
+
+        self.cur.execute(sql, (city, id_user))
+        self.conn.commit()
+
+    def get_filter_gender(self, id_user):
+        sql = """ SELECT filter_gender from users where user_id = ?"""
+        self.cur.execute(sql, (id_user,))
+        return self.cur.fetchone()[0]
+
+    def get_filter_city(self, id_user):
+        sql = """ SELECT filter_city from users where user_id = ?"""
+        self.cur.execute(sql, (id_user,))
+        return self.cur.fetchone()[0]
+    def get_filter_age(self, id_user):
+        sql = """ SELECT filter_age from users where user_id = ?"""
+        self.cur.execute(sql, (id_user,))
+        return self.cur.fetchone()[0]
+
+    def get_random_profile_gca(self, id_user, gender_, city_, age_):
+        sql = """ SELECT * from users where user_id != ? and gender == ? and city == ? and age == ?"""
+
+        self.cur.execute(sql, (id_user, gender_, city_, age_))
+        info = self.cur.fetchall()
+        return info[rd(0, len(info) - 1)]
+
+    def get_random_profile_gc(self, id_user, gender_, city_):
+        sql = """ SELECT * from users where user_id != ? and gender == ? and city == ?"""
+
+        self.cur.execute(sql, (id_user, gender_, city_))
+        info = self.cur.fetchall()
+        return info[rd(0, len(info) - 1)]
+
+    def get_random_profile_ga(self, id_user, gender_, age_):
+        sql = """ SELECT * from users where user_id != ? and gender == ? and age == ?"""
+
+        self.cur.execute(sql, (id_user, gender_, age_))
+        info = self.cur.fetchall()
+        return info[rd(0, len(info) - 1)]
+
+    def get_random_profile_ca(self, id_user, city_, age_):
+        sql = """ SELECT * from users where user_id != ? and city == ? and age == ?"""
+
+        self.cur.execute(sql, (id_user, city_, age_))
+        info = self.cur.fetchall()
+        return info[rd(0, len(info) - 1)]
+
+    def get_random_profile_g(self, id_user, gender_):
+        sql = """ SELECT * from users where user_id != ? and gender == ?"""
+
+        self.cur.execute(sql, (id_user, gender_))
+        info = self.cur.fetchall()
+        return info[rd(0, len(info) - 1)]
+
+    def get_random_profile_a(self, id_user, age_):
+        sql = """ SELECT * from users where user_id != ? and age == ?"""
+
+        self.cur.execute(sql, (id_user, age_))
+        info = self.cur.fetchall()
+        return info[rd(0, len(info) - 1)]
+
+    def get_random_profile_c(self, id_user, city_):
+        sql = """ SELECT * from users where user_id != ? and city == ?"""
+
+        self.cur.execute(sql, (id_user, city_))
+        info = self.cur.fetchall()
+        return info[rd(0, len(info) - 1)]

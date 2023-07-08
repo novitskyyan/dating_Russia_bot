@@ -148,7 +148,7 @@ async def info(message: types.Message):
     elif db.get_state(user_id) == "age":
         if message.text.isdigit() and 18 <= int(message.text) <= 80:
             db.replace_state(user_id, "description")
-            db.replace_age(user_id, message.text);
+            db.replace_age(user_id, message.text)
             await message.reply("Введите пару слов о себе")
     elif db.get_state(user_id) == "description":
         db.replace_state(user_id, "ans1")
@@ -313,17 +313,58 @@ async def info(message: types.Message):
 
     # GET TO KNOW
     elif db.get_state(user_id) == "wait" and message.text == "Познакомиться":
-        info = db.get_random_profile(user_id)
-        photo_blob = db.get_photo(info[0])
-        write_to_file(photo_blob, f'photo{info[0]}.jpeg')
+        if db.get_filter_gender(user_id) is not None and db.get_filter_city(user_id) is not None and db.get_filter_age(user_id) is not None:
+            info = db.get_random_profile_gca(user_id, db.get_filter_gender(user_id), db.get_filter_city(user_id), db.get_filter_age(user_id))
+        elif db.get_filter_gender(user_id) is not None and db.get_filter_city(user_id) is not None:
+            info = db.get_random_profile_gc(user_id, db.get_filter_gender(user_id), db.get_filter_city(user_id))
+        elif db.get_filter_gender(user_id) is not None and db.get_filter_age(user_id) is not None:
+            info = db.get_random_profile_ga(user_id, db.get_filter_gender(user_id), db.get_filter_age(user_id))
+        elif db.get_filter_city(user_id) is not None and db.get_filter_age(user_id) is not None:
+            info = db.get_random_profile_ca(user_id, db.get_filter_city(user_id), db.get_filter_age(user_id))
+        elif db.get_filter_gender(user_id) is not None:
+            info = db.get_random_profile_g(user_id, db.get_filter_gender(user_id))
+        elif db.get_filter_city(user_id) is not None:
+            info = db.get_random_profile_c(user_id, db.get_filter_city(user_id))
+        elif db.get_filter_age(user_id) is not None:
+            info = db.get_random_profile_a(user_id, db.get_filter_age(user_id))
+        else:
+            info = db.get_random_profile(user_id)
+        #photo_blob = db.get_photo(info[0])
+        #write_to_file(photo_blob, f'photo{info[0]}.jpeg')
         await message.reply(f"{info[2]}\n{info[4]}\n{info[5]}\n{info[6]}\n{info[7]}")
-        await bot.send_photo(user_id, types.InputFile(f'img/photo{info[0]}.jpeg'))
-        os.remove(f"img/photo{info[0]}.jpeg")
+        #await bot.send_photo(user_id, types.InputFile(f'img/photo{info[0]}.jpeg'))
+        #os.remove(f"img/photo{info[0]}.jpeg")
 
     # FILTER PROFILES
     elif db.get_state(user_id) == "wait" and message.text == "Фильтр":
         db.replace_state(user_id, "filter")
         await message.reply("Выберите параметры для фильтрации анкет", reply_markup=FILTER_KB)
+    elif db.get_state(user_id) == "filter" and message.text == "По возрасту":
+        db.replace_state(user_id, "filter_age")
+        await message.reply("Введите возраст", reply_markup=ReplyKeyboardRemove())
+    elif db.get_state(user_id) == "filter_age":
+        if message.text.isdigit() and 18 <= int(message.text) <= 80:
+            db.replace_state(user_id, "wait")
+            db.replace_filter_age(user_id, int(message.text))
+            await message.reply("Возраст записан", reply_markup=MENU_KB)
+        else:
+            await message.reply("Некорректный формат ввода!")
+    elif db.get_state(user_id) == "wait" and message.text == "По полу":
+        db.replace_state(user_id, "filter_gender")
+        await message.reply("Укажите пол для поиска", reply_markup=GENDER_KB)
+    elif db.get_state(user_id) == "filter_gender":
+        db.replace_state(user_id, "wait")
+        db.replace_filter_gender(user_id, message.text)
+        await message.reply("Пол для поиска выбран", reply_markup=GENDER_KB)
+    elif db.get_state(user_id) == "filter" and message.text == "По городу":
+        db.replace_state(user_id, "filter_city")
+        await message.reply("Укажите город для поиска", reply_markup=ReplyKeyboardRemove())
+    elif db.get_state(user_id) == "filter_city":
+        db.replace_state(user_id, "wait")
+        db.replace_filter_city(user_id, message.text)
+        await message.reply("Город выбран для поиска", reply_markup=MENU_KB)
+
+
 
 # PHOTO
 @dp.message_handler(content_types=['photo'])
